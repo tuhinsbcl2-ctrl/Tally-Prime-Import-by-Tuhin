@@ -274,7 +274,7 @@ def _normalize_date(date_str: str) -> str:
         return date_str
 
     # Strip trailing ".0" (e.g. from numeric Excel serial read as string)
-    date_str = re.sub(r"\.0+$", "", date_str).strip()
+    date_str = re.sub(r"\.0$", "", date_str).strip()
 
     # Strip trailing time portion " HH:MM:SS" so the remaining formats match
     date_str = re.sub(r"\s+\d{1,2}:\d{2}(:\d{2})?$", "", date_str).strip()

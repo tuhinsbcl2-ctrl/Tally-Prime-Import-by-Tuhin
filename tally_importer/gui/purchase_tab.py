@@ -44,6 +44,15 @@ class PurchaseTab(ttk.Frame):
         self._sheet_combo.grid(row=1, column=1, sticky="w", padx=4)
         self._sheet_combo.bind("<<ComboboxSelected>>", self._load_sheet)
 
+        # Default voucher type
+        ttk.Label(top, text="Default Voucher Type:").grid(
+            row=2, column=0, sticky="w", pady=3
+        )
+        self._default_vtype = tk.StringVar(value="Purchase")
+        ttk.Entry(top, textvariable=self._default_vtype, width=24).grid(
+            row=2, column=1, sticky="w", padx=4
+        )
+
         top.columnconfigure(1, weight=1)
 
         btn_frame = ttk.Frame(self, padding=(8, 0, 8, 4))
@@ -141,7 +150,7 @@ class PurchaseTab(ttk.Frame):
             messagebox.showwarning("Validate", "Load an Excel file first.")
             return
         rows = self._df.fillna("").to_dict(orient="records")
-        valid, errors = validate_purchase(rows, self._mapping)
+        valid, errors = validate_purchase(rows, self._mapping, self._default_vtype.get())
         msgs: list[str] = []
         if errors:
             for e in errors:
@@ -155,7 +164,7 @@ class PurchaseTab(ttk.Frame):
             messagebox.showwarning("Export", "Load an Excel file first.")
             return
         rows = self._df.fillna("").to_dict(orient="records")
-        valid, errors = validate_purchase(rows, self._mapping)
+        valid, errors = validate_purchase(rows, self._mapping, self._default_vtype.get())
         if not valid:
             messagebox.showwarning(
                 "Export", "No valid entries to export.\nCheck validation messages."

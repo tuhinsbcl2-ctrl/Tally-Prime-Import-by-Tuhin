@@ -35,6 +35,7 @@ class SalesEntry:
     total_amount: float = 0.0
     gst_number: str = ""
     narration: str = ""
+    voucher_type: str = "Sales"
 
 
 @dataclass
@@ -55,3 +56,4 @@ class PurchaseEntry:
     total_amount: float = 0.0
     gst_number: str = ""
     narration: str = ""
+    voucher_type: str = "Purchase"

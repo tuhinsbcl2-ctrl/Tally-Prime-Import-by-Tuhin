@@ -90,6 +90,7 @@ def validate_bank_transactions(
 def validate_sales(
     rows: list[dict[str, Any]],
     mapping: dict[str, str],
+    default_voucher_type: str = "Sales",
 ) -> tuple[list[SalesEntry], list[dict[str, Any]]]:
     valid: list[SalesEntry] = []
     errors: list[dict[str, Any]] = []
@@ -146,6 +147,7 @@ def validate_sales(
         if errs:
             errors.append({"row": i + 2, "errors": errs, "data": row})
         else:
+            voucher_type = get(row, "voucher_type") or default_voucher_type
             valid.append(
                 SalesEntry(
                     party_name=party_name,
@@ -162,6 +164,7 @@ def validate_sales(
                     total_amount=total_amount or computed_total,
                     gst_number=get(row, "gst_number"),
                     narration=get(row, "narration"),
+                    voucher_type=voucher_type,
                 )
             )
 
@@ -175,6 +178,7 @@ def validate_sales(
 def validate_purchase(
     rows: list[dict[str, Any]],
     mapping: dict[str, str],
+    default_voucher_type: str = "Purchase",
 ) -> tuple[list[PurchaseEntry], list[dict[str, Any]]]:
     valid: list[PurchaseEntry] = []
     errors: list[dict[str, Any]] = []
@@ -230,6 +234,7 @@ def validate_purchase(
         if errs:
             errors.append({"row": i + 2, "errors": errs, "data": row})
         else:
+            voucher_type = get(row, "voucher_type") or default_voucher_type
             valid.append(
                 PurchaseEntry(
                     party_name=party_name,
@@ -246,6 +251,7 @@ def validate_purchase(
                     total_amount=total_amount or computed_total,
                     gst_number=get(row, "gst_number"),
                     narration=get(row, "narration"),
+                    voucher_type=voucher_type,
                 )
             )
 
@@ -266,6 +272,12 @@ def _normalize_date(date_str: str) -> str:
     # Already in YYYYMMDD
     if re.fullmatch(r"\d{8}", date_str):
         return date_str
+
+    # Strip trailing ".0" (e.g. from numeric Excel serial read as string)
+    date_str = re.sub(r"\.0$", "", date_str).strip()
+
+    # Strip trailing time portion " HH:MM:SS" so the remaining formats match
+    date_str = re.sub(r"\s+\d{1,2}:\d{2}(:\d{2})?$", "", date_str).strip()
 
     for fmt in (
         "%d-%m-%Y", "%d/%m/%Y", "%Y-%m-%d", "%Y/%m/%d",

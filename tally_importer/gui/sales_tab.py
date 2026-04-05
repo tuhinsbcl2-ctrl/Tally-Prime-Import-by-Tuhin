@@ -8,6 +8,7 @@ from typing import Any
 import pandas as pd
 
 from tally_importer import excel_reader
+from tally_importer.gui.export_helpers import build_error_detail, format_error_lines
 from tally_importer.gui.mapping_dialog import MappingDialog
 from tally_importer.validator import validate_sales
 from tally_importer.xml_generator import build_sales_xml
@@ -171,9 +172,13 @@ class SalesTab(ttk.Frame):
             )
             return
         if errors:
+            self._log("\n".join(format_error_lines(errors)))
+            detail = build_error_detail(errors)
             proceed = messagebox.askyesno(
                 "Validation Warnings",
-                f"{len(errors)} row(s) have errors and will be skipped.\nExport the valid rows?",
+                f"{len(errors)} row(s) have errors and will be skipped:\n\n"
+                f"{detail}\n\n"
+                f"Export the {len(valid)} valid rows?",
             )
             if not proceed:
                 return

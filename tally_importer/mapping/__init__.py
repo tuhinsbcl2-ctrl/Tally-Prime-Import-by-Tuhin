@@ -80,6 +80,7 @@ SALES_FIELDS: list[tuple[str, str, bool]] = [
     ("total_amount",   "Total Amount",       False),
     ("gst_number",     "GST Number",         False),
     ("narration",      "Narration",          False),
+    ("voucher_type",   "Voucher Type",       False),
 ]
 
 PURCHASE_FIELDS: list[tuple[str, str, bool]] = [
@@ -97,4 +98,5 @@ PURCHASE_FIELDS: list[tuple[str, str, bool]] = [
     ("total_amount",   "Total Amount",       False),
     ("gst_number",     "GST Number",         False),
     ("narration",      "Narration",          False),
+    ("voucher_type",   "Voucher Type",       False),
 ]

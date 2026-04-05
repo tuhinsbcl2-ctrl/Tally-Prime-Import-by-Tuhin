@@ -62,7 +62,7 @@ def build_purchase_xml(entries: list[PurchaseEntry]) -> str:
 
         voucher = _sub(msg, "VOUCHER")
         voucher.set("REMOTEID", str(uuid.uuid4()))
-        voucher.set("VCHTYPE", "Purchase")
+        voucher.set("VCHTYPE", entry.voucher_type)
         voucher.set("ACTION", "Create")
         voucher.set("OBJVIEW", "Invoice Voucher View")
 
@@ -70,7 +70,7 @@ def build_purchase_xml(entries: list[PurchaseEntry]) -> str:
         _sub(voucher, "REFERENCEDATE", entry.original_date)
         _sub(voucher, "REFERENCE", entry.invoice_number)
         _sub(voucher, "NARRATION", entry.narration)
-        _sub(voucher, "VOUCHERTYPENAME", "Purchase")
+        _sub(voucher, "VOUCHERTYPENAME", entry.voucher_type)
         _sub(voucher, "VOUCHERNUMBER", entry.invoice_number)
         _sub(voucher, "PARTYLEDGERNAME", entry.party_name)
 

@@ -44,6 +44,8 @@ class SalesEntry:
     sgst_ledger: str = ""
     igst_ledger: str = ""
     round_off_ledger: str = ""
+    description: str = ""
+    place_of_supply: str = ""
 
 
 @dataclass
@@ -65,3 +67,10 @@ class PurchaseEntry:
     gst_number: str = ""
     narration: str = ""
     voucher_type: str = "Purchase"
+    hsn_code: str = ""
+    cgst_ledger: str = ""
+    sgst_ledger: str = ""
+    igst_ledger: str = ""
+    round_off_ledger: str = ""
+    description: str = ""
+    place_of_supply: str = ""

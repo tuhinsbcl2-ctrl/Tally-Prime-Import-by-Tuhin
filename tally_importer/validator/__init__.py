@@ -180,6 +180,8 @@ def validate_sales(
                     sgst_ledger=sgst_ledger,
                     igst_ledger=igst_ledger,
                     round_off_ledger=round_off_ledger,
+                    description=get(row, "description"),
+                    place_of_supply=get(row, "place_of_supply"),
                 )
             )
 
@@ -194,6 +196,10 @@ def validate_purchase(
     rows: list[dict[str, Any]],
     mapping: dict[str, str],
     default_voucher_type: str = "Purchase",
+    cgst_ledger: str = "",
+    sgst_ledger: str = "",
+    igst_ledger: str = "",
+    round_off_ledger: str = "",
 ) -> tuple[list[PurchaseEntry], list[dict[str, Any]]]:
     valid: list[PurchaseEntry] = []
     errors: list[dict[str, Any]] = []
@@ -203,7 +209,10 @@ def validate_purchase(
         return str(row.get(col, "")).strip()
 
     def fget(row: dict, key: str) -> float:
-        return _safe_float(get(row, key)) or 0.0
+        val = get(row, key)
+        if val in ("-", ""):
+            return 0.0
+        return _safe_float(val) or 0.0
 
     for i, row in enumerate(rows):
         errs: list[str] = []
@@ -267,6 +276,13 @@ def validate_purchase(
                     gst_number=get(row, "gst_number"),
                     narration=get(row, "narration"),
                     voucher_type=voucher_type,
+                    hsn_code=get(row, "hsn_code"),
+                    cgst_ledger=cgst_ledger,
+                    sgst_ledger=sgst_ledger,
+                    igst_ledger=igst_ledger,
+                    round_off_ledger=round_off_ledger,
+                    description=get(row, "description"),
+                    place_of_supply=get(row, "place_of_supply"),
                 )
             )
 

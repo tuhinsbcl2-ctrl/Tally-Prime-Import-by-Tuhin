@@ -64,10 +64,12 @@ def build_purchase_xml(entries: list[PurchaseEntry]) -> str:
         voucher.set("REMOTEID", str(uuid.uuid4()))
         voucher.set("VCHTYPE", entry.voucher_type)
         voucher.set("ACTION", "Create")
-        voucher.set("OBJVIEW", "Accounting Voucher View")
+        voucher.set("OBJVIEW", "Invoice Voucher View")
 
         _sub(voucher, "DATE", entry.entry_date)
         _sub(voucher, "EFFECTIVEDATE", entry.entry_date)
+        _sub(voucher, "ISINVOICE", "Yes")
+        _sub(voucher, "PERSISTEDVIEW", "Invoice Voucher View")
         _sub(voucher, "REFERENCEDATE", entry.original_date)
         _sub(voucher, "REFERENCE", entry.invoice_number)
         _sub(voucher, "NARRATION", entry.narration)
@@ -82,29 +84,31 @@ def build_purchase_xml(entries: list[PurchaseEntry]) -> str:
         _sub(pur_entry, "LEDGERNAME", entry.purchase_ledger)
         _sub(pur_entry, "ISDEEMEDPOSITIVE", "Yes")
         _sub(pur_entry, "AMOUNT", str(-round(entry.taxable_amount, 2)))
+        if entry.description:
+            _sub(pur_entry, "DESCRIPTION", entry.description)
 
         # GST input tax Dr
         if entry.cgst:
             cgst_entry = _sub(voucher, "ALLLEDGERENTRIES.LIST")
-            _sub(cgst_entry, "LEDGERNAME", "CGST Input")
+            _sub(cgst_entry, "LEDGERNAME", entry.cgst_ledger or "Input CGST")
             _sub(cgst_entry, "ISDEEMEDPOSITIVE", "Yes")
             _sub(cgst_entry, "AMOUNT", str(-round(entry.cgst, 2)))
 
         if entry.sgst:
             sgst_entry = _sub(voucher, "ALLLEDGERENTRIES.LIST")
-            _sub(sgst_entry, "LEDGERNAME", "SGST Input")
+            _sub(sgst_entry, "LEDGERNAME", entry.sgst_ledger or "Input SGST")
             _sub(sgst_entry, "ISDEEMEDPOSITIVE", "Yes")
             _sub(sgst_entry, "AMOUNT", str(-round(entry.sgst, 2)))
 
         if entry.igst:
             igst_entry = _sub(voucher, "ALLLEDGERENTRIES.LIST")
-            _sub(igst_entry, "LEDGERNAME", "IGST Input")
+            _sub(igst_entry, "LEDGERNAME", entry.igst_ledger or "Input IGST")
             _sub(igst_entry, "ISDEEMEDPOSITIVE", "Yes")
             _sub(igst_entry, "AMOUNT", str(-round(entry.igst, 2)))
 
         if entry.round_off:
             ro_entry = _sub(voucher, "ALLLEDGERENTRIES.LIST")
-            _sub(ro_entry, "LEDGERNAME", "Round Off")
+            _sub(ro_entry, "LEDGERNAME", entry.round_off_ledger or "Round Off")
             is_debit = entry.round_off > 0
             _sub(ro_entry, "ISDEEMEDPOSITIVE", "Yes" if is_debit else "No")
             _sub(ro_entry, "AMOUNT", str(round(entry.round_off, 2)))
@@ -114,6 +118,13 @@ def build_purchase_xml(entries: list[PurchaseEntry]) -> str:
         _sub(party_entry, "LEDGERNAME", entry.party_name)
         _sub(party_entry, "ISDEEMEDPOSITIVE", "No")
         _sub(party_entry, "AMOUNT", str(total))
+
+        if entry.gst_number:
+            buyer = _sub(voucher, "BASICBUYERADDRESS.LIST")
+            _sub(buyer, "BASICBUYERADDRESS", entry.gst_number)
+
+        if entry.place_of_supply:
+            _sub(voucher, "PLACEOFSUPPLY", entry.place_of_supply)
 
     _indent(envelope)
     return ET.tostring(envelope, encoding="unicode", xml_declaration=False)

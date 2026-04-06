@@ -111,6 +111,8 @@ def test_sales_xml_structure():
 
     voucher = root.find(".//VOUCHER")
     assert voucher.get("VCHTYPE") == "Sales"
+    assert voucher.get("OBJVIEW") == "Accounting Voucher View"
+    assert root.find(".//EFFECTIVEDATE").text == "20240401"
     assert root.find(".//PARTYLEDGERNAME").text == "ABC Corp"
 
     entries = root.findall(".//ALLLEDGERENTRIES.LIST")
@@ -157,6 +159,8 @@ def test_purchase_xml_structure():
 
     voucher = root.find(".//VOUCHER")
     assert voucher.get("VCHTYPE") == "Purchase"
+    assert voucher.get("OBJVIEW") == "Accounting Voucher View"
+    assert root.find(".//EFFECTIVEDATE").text == "20240405"
 
     entries = root.findall(".//ALLLEDGERENTRIES.LIST")
     # Purchase Dr, CGST Dr, SGST Dr, Supplier Cr

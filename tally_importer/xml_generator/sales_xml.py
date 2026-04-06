@@ -64,9 +64,10 @@ def build_sales_xml(entries: list[SalesEntry]) -> str:
         voucher.set("REMOTEID", str(uuid.uuid4()))
         voucher.set("VCHTYPE", entry.voucher_type)
         voucher.set("ACTION", "Create")
-        voucher.set("OBJVIEW", "Invoice Voucher View")
+        voucher.set("OBJVIEW", "Accounting Voucher View")
 
         _sub(voucher, "DATE", entry.entry_date)
+        _sub(voucher, "EFFECTIVEDATE", entry.entry_date)
         _sub(voucher, "REFERENCEDATE", entry.original_date)
         _sub(voucher, "REFERENCE", entry.invoice_number)
         _sub(voucher, "NARRATION", entry.narration)

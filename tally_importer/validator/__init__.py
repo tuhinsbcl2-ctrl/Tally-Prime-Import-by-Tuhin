@@ -94,6 +94,10 @@ def validate_sales(
     rows: list[dict[str, Any]],
     mapping: dict[str, str],
     default_voucher_type: str = "Sales",
+    cgst_ledger: str = "",
+    sgst_ledger: str = "",
+    igst_ledger: str = "",
+    round_off_ledger: str = "",
 ) -> tuple[list[SalesEntry], list[dict[str, Any]]]:
     valid: list[SalesEntry] = []
     errors: list[dict[str, Any]] = []
@@ -103,7 +107,10 @@ def validate_sales(
         return str(row.get(col, "")).strip()
 
     def fget(row: dict, key: str) -> float:
-        return _safe_float(get(row, key)) or 0.0
+        val = get(row, key)
+        if val in ("-", ""):
+            return 0.0
+        return _safe_float(val) or 0.0
 
     for i, row in enumerate(rows):
         errs: list[str] = []
@@ -168,6 +175,11 @@ def validate_sales(
                     gst_number=get(row, "gst_number"),
                     narration=get(row, "narration"),
                     voucher_type=voucher_type,
+                    hsn_code=get(row, "hsn_code"),
+                    cgst_ledger=cgst_ledger,
+                    sgst_ledger=sgst_ledger,
+                    igst_ledger=igst_ledger,
+                    round_off_ledger=round_off_ledger,
                 )
             )
 

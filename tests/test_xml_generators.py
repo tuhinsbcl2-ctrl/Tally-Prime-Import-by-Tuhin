@@ -138,9 +138,9 @@ def test_sales_xml_igst():
     root = ET.fromstring(xml_str)
     entries = root.findall(".//ALLLEDGERENTRIES.LIST")
     ledger_names = [e.find("LEDGERNAME").text for e in entries]
-    assert "IGST" in ledger_names
-    assert "CGST" not in ledger_names
-    assert "SGST" not in ledger_names
+    assert "Output IGST" in ledger_names
+    assert "Output CGST" not in ledger_names
+    assert "Output SGST" not in ledger_names
 
 
 # --- Purchase XML ---

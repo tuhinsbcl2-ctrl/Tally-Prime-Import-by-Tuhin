@@ -39,6 +39,11 @@ class SalesEntry:
     gst_number: str = ""
     narration: str = ""
     voucher_type: str = "Sales"
+    hsn_code: str = ""
+    cgst_ledger: str = ""
+    sgst_ledger: str = ""
+    igst_ledger: str = ""
+    round_off_ledger: str = ""
 
 
 @dataclass

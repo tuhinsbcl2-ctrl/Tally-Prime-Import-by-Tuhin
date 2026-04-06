@@ -75,15 +75,16 @@ SALES_FIELDS: list[tuple[str, str, bool]] = [
     ("original_date",  "Original Date",       False),
     ("sales_ledger",   "Sales Ledger",        True),
     ("taxable_amount", "Taxable Amount",      True),
-    ("cgst",           "CGST",               False),
-    ("sgst",           "SGST",               False),
-    ("igst",           "IGST",               False),
     ("gst_rate",       "GST Rate",           False),
+    ("hsn_code",       "HSN/SAC Code",       False),
+    ("cgst",           "CGST Amount",        False),
+    ("sgst",           "SGST Amount",        False),
+    ("igst",           "IGST Amount",        False),
     ("round_off",      "Round Off",          False),
-    ("total_amount",   "Total Amount",       False),
+    ("total_amount",   "Total Amount",       True),
     ("gst_number",     "GST Number",         False),
     ("narration",      "Narration",          False),
-    ("voucher_type",   "Voucher Type",       False),
+    ("voucher_type",   "Voucher Type",       True),
 ]
 
 PURCHASE_FIELDS: list[tuple[str, str, bool]] = [

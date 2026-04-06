@@ -77,6 +77,9 @@ def validate_bank_transactions(
                     narration=get(row, "narration"),
                     transaction_id=get(row, "transaction_id"),
                     voucher_number=get(row, "voucher_number"),
+                    inst_no=get(row, "inst_no"),
+                    inst_date=_normalize_date(get(row, "inst_date")) if get(row, "inst_date") else "",
+                    transaction_type=get(row, "transaction_type"),
                 )
             )
 

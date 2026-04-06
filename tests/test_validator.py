@@ -29,6 +29,9 @@ BANK_MAPPING = {
     "narration": "Narration",
     "transaction_id": "TxnID",
     "voucher_number": "VchNo",
+    "inst_no": "InstNo",
+    "inst_date": "InstDate",
+    "transaction_type": "TxnType",
 }
 
 def _bank_row(**kw):
@@ -36,6 +39,7 @@ def _bank_row(**kw):
         "Date": "01-04-2024", "Voucher Type": "Receipt",
         "Bank": "HDFC Bank", "Party": "ABC Ltd",
         "Amount": "5000", "Narration": "Test", "TxnID": "T001", "VchNo": "R001",
+        "InstNo": "CHQ001", "InstDate": "01-04-2024", "TxnType": "Cheque/DD",
     }
     base.update(kw)
     return base
@@ -48,6 +52,24 @@ def test_bank_valid_row():
     assert valid[0].voucher_type == "Receipt"
     assert valid[0].amount == 5000.0
     assert valid[0].date == "20240401"
+    assert valid[0].inst_no == "CHQ001"
+    assert valid[0].inst_date == "20240401"
+    assert valid[0].transaction_type == "Cheque/DD"
+
+
+def test_bank_inst_fields_optional():
+    """inst_no / inst_date / transaction_type are optional – row without them is still valid."""
+    row = _bank_row()
+    row.pop("InstNo", None)
+    row.pop("InstDate", None)
+    row.pop("TxnType", None)
+    mapping = {k: v for k, v in BANK_MAPPING.items()
+               if k not in ("inst_no", "inst_date", "transaction_type")}
+    valid, errors = validate_bank_transactions([row], mapping)
+    assert len(valid) == 1
+    assert valid[0].inst_no == ""
+    assert valid[0].inst_date == ""
+    assert valid[0].transaction_type == ""
 
 
 def test_bank_missing_date():

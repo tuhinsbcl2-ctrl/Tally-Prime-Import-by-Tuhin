@@ -61,6 +61,24 @@ The application window opens with three tabs:
 - **Sales**
 - **Purchase**
 
+### Run as a Desktop App (no console window)
+
+On **Windows**, double-click **`run.pyw`** in the repository folder.  
+Python must be installed and `.pyw` files must be associated with `pythonw.exe`
+(the standard Python installer does this automatically).
+
+### Build a Standalone `.exe` (no Python required on the target PC)
+
+Install PyInstaller and create a single-file executable:
+
+```bash
+pip install pyinstaller
+pyinstaller --onefile --noconsole --name "Tally Prime Importer" main.py
+```
+
+The resulting `dist/Tally Prime Importer.exe` can be distributed and run on any
+Windows PC without Python installed.
+
 ---
 
 ## Typical Workflow
@@ -105,6 +123,9 @@ The application window opens with three tabs:
 | Narration | Narration text | optional |
 | Transaction ID | Bank reference / UTR number | optional |
 | Voucher No | Internal voucher number | optional |
+| Instrument No | Instrument/cheque number (`INSTRUMENTNUMBER` in Tally) | optional |
+| Instrument Date | Instrument/cheque date (mapped to `INSTRUMENTDATE` in Tally) | optional |
+| Transaction Type | e.g. `e-Fund Transfer`, `Cheque/DD` (defaults to `Others`) | optional |
 
 > **Column names are flexible** – you map them in the app. The names above are suggestions.
 

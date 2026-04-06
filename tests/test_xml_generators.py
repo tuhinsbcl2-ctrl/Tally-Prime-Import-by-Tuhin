@@ -28,17 +28,46 @@ def test_bank_xml_structure():
     entries = root.findall(".//ALLLEDGERENTRIES.LIST")
     assert len(entries) == 2
 
-    # Bank Dr
+    # Bank Dr (first entry for Receipt)
     bank_entry = entries[0]
     assert bank_entry.find("LEDGERNAME").text == "HDFC Bank"
     assert bank_entry.find("ISDEEMEDPOSITIVE").text == "Yes"
     assert float(bank_entry.find("AMOUNT").text) == -5000.0
+
+    # Bank entry always has BANKALLOCATIONS.LIST
+    alloc = bank_entry.find("BANKALLOCATIONS.LIST")
+    assert alloc is not None
+    assert alloc.find("TRANSACTIONTYPE").text == "Others"
 
     # Party Cr
     party_entry = entries[1]
     assert party_entry.find("LEDGERNAME").text == "ABC Ltd"
     assert party_entry.find("ISDEEMEDPOSITIVE").text == "No"
     assert float(party_entry.find("AMOUNT").text) == 5000.0
+    # Party entry must NOT have BANKALLOCATIONS.LIST
+    assert party_entry.find("BANKALLOCATIONS.LIST") is None
+
+
+def test_bank_xml_bank_allocations_with_inst_fields():
+    """BANKALLOCATIONS.LIST must carry inst_no, inst_date and transaction_type."""
+    txn = BankTransaction(
+        date="20260331", voucher_type="Payment",
+        bank_ledger="ICICI Bank", party_ledger="Vendor X",
+        amount=29.50, inst_no="REF12345", inst_date="20260331",
+        transaction_type="e-Fund Transfer",
+    )
+    xml_str = build_bank_xml([txn])
+    root = ET.fromstring(xml_str)
+    entries = root.findall(".//ALLLEDGERENTRIES.LIST")
+    # Payment: Party Dr (no alloc), Bank Cr (has alloc)
+    bank_entry = entries[1]
+    assert bank_entry.find("LEDGERNAME").text == "ICICI Bank"
+    alloc = bank_entry.find("BANKALLOCATIONS.LIST")
+    assert alloc is not None
+    assert alloc.find("INSTRUMENTNUMBER").text == "REF12345"
+    assert alloc.find("INSTRUMENTDATE").text == "20260331"
+    assert alloc.find("TRANSACTIONTYPE").text == "e-Fund Transfer"
+    assert float(alloc.find("AMOUNT").text) == 29.50  # Cr → positive
 
 
 def test_bank_xml_payment():

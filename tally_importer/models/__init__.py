@@ -15,6 +15,9 @@ class BankTransaction:
     narration: str = ""
     transaction_id: str = ""
     voucher_number: str = ""
+    inst_no: str = ""           # Instrument Number (cheque no, reference no, etc.)
+    inst_date: str = ""         # Instrument Date (YYYYMMDD)
+    transaction_type: str = ""  # Transaction type (e.g. "e-Fund Transfer", "Cheque/DD")
 
 
 @dataclass

@@ -83,17 +83,20 @@ def build_bank_xml(transactions: list[BankTransaction]) -> str:
 
         if txn.voucher_type == "Receipt":
             # Bank Dr, Party Cr
-            _add_ledger_entry(voucher, txn.bank_ledger, is_debit=True,  amount=amount)
+            _add_ledger_entry(voucher, txn.bank_ledger, is_debit=True,  amount=amount,
+                              is_bank_entry=True, txn=txn)
             _add_ledger_entry(voucher, txn.party_ledger, is_debit=False, amount=amount)
 
         elif txn.voucher_type == "Payment":
             # Party Dr, Bank Cr
             _add_ledger_entry(voucher, txn.party_ledger, is_debit=True,  amount=amount)
-            _add_ledger_entry(voucher, txn.bank_ledger,  is_debit=False, amount=amount)
+            _add_ledger_entry(voucher, txn.bank_ledger,  is_debit=False, amount=amount,
+                              is_bank_entry=True, txn=txn)
 
         else:  # Contra
             # bank-in Dr, bank-out Cr  (bank_ledger = destination, party_ledger = source)
-            _add_ledger_entry(voucher, txn.bank_ledger,  is_debit=True,  amount=amount)
+            _add_ledger_entry(voucher, txn.bank_ledger,  is_debit=True,  amount=amount,
+                              is_bank_entry=True, txn=txn)
             _add_ledger_entry(voucher, txn.party_ledger, is_debit=False, amount=amount)
 
     _indent(envelope)
@@ -105,6 +108,8 @@ def _add_ledger_entry(
     ledger_name: str,
     is_debit: bool,
     amount: float,
+    is_bank_entry: bool = False,
+    txn: "BankTransaction | None" = None,
 ) -> None:
     entry = _sub(voucher, "ALLLEDGERENTRIES.LIST")
     _sub(entry, "LEDGERNAME", ledger_name)
@@ -112,3 +117,12 @@ def _add_ledger_entry(
     # Tally stores debit as negative, credit as positive in the XML amount field
     tally_amount = -round(amount, 2) if is_debit else round(amount, 2)
     _sub(entry, "AMOUNT", str(tally_amount))
+
+    if is_bank_entry and txn is not None:
+        alloc = _sub(entry, "BANKALLOCATIONS.LIST")
+        _sub(alloc, "DATE", txn.date)
+        _sub(alloc, "INSTRUMENTDATE", txn.inst_date or txn.date)
+        _sub(alloc, "INSTRUMENTNUMBER", txn.inst_no)
+        _sub(alloc, "TRANSACTIONTYPE", txn.transaction_type or "Others")
+        _sub(alloc, "PAYMENTFAVOURING", "")
+        _sub(alloc, "AMOUNT", str(tally_amount))

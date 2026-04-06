@@ -63,6 +63,9 @@ BANK_FIELDS: list[tuple[str, str, bool]] = [
     ("narration",      "Narration",           False),
     ("transaction_id", "Transaction ID",      False),
     ("voucher_number", "Voucher Number",       False),
+    ("inst_no",        "Instrument No.",       False),
+    ("inst_date",      "Instrument Date",      False),
+    ("transaction_type", "Transaction Type",   False),
 ]
 
 SALES_FIELDS: list[tuple[str, str, bool]] = [

@@ -54,6 +54,31 @@ class PurchaseTab(ttk.Frame):
             row=2, column=1, sticky="w", padx=4
         )
 
+        # GST ledger name settings
+        ttk.Label(top, text="CGST Ledger Name:").grid(row=3, column=0, sticky="w", pady=3)
+        self._cgst_ledger = tk.StringVar(value="Input CGST")
+        ttk.Entry(top, textvariable=self._cgst_ledger, width=24).grid(
+            row=3, column=1, sticky="w", padx=4
+        )
+
+        ttk.Label(top, text="SGST Ledger Name:").grid(row=4, column=0, sticky="w", pady=3)
+        self._sgst_ledger = tk.StringVar(value="Input SGST")
+        ttk.Entry(top, textvariable=self._sgst_ledger, width=24).grid(
+            row=4, column=1, sticky="w", padx=4
+        )
+
+        ttk.Label(top, text="IGST Ledger Name:").grid(row=5, column=0, sticky="w", pady=3)
+        self._igst_ledger = tk.StringVar(value="Input IGST")
+        ttk.Entry(top, textvariable=self._igst_ledger, width=24).grid(
+            row=5, column=1, sticky="w", padx=4
+        )
+
+        ttk.Label(top, text="Round Off Ledger Name:").grid(row=6, column=0, sticky="w", pady=3)
+        self._round_off_ledger = tk.StringVar(value="Round Off")
+        ttk.Entry(top, textvariable=self._round_off_ledger, width=24).grid(
+            row=6, column=1, sticky="w", padx=4
+        )
+
         top.columnconfigure(1, weight=1)
 
         btn_frame = ttk.Frame(self, padding=(8, 0, 8, 4))
@@ -151,7 +176,13 @@ class PurchaseTab(ttk.Frame):
             messagebox.showwarning("Validate", "Load an Excel file first.")
             return
         rows = self._df.fillna("").to_dict(orient="records")
-        valid, errors = validate_purchase(rows, self._mapping, self._default_vtype.get())
+        valid, errors = validate_purchase(
+            rows, self._mapping, self._default_vtype.get(),
+            cgst_ledger=self._cgst_ledger.get(),
+            sgst_ledger=self._sgst_ledger.get(),
+            igst_ledger=self._igst_ledger.get(),
+            round_off_ledger=self._round_off_ledger.get(),
+        )
         msgs: list[str] = []
         if errors:
             for e in errors:
@@ -165,7 +196,13 @@ class PurchaseTab(ttk.Frame):
             messagebox.showwarning("Export", "Load an Excel file first.")
             return
         rows = self._df.fillna("").to_dict(orient="records")
-        valid, errors = validate_purchase(rows, self._mapping, self._default_vtype.get())
+        valid, errors = validate_purchase(
+            rows, self._mapping, self._default_vtype.get(),
+            cgst_ledger=self._cgst_ledger.get(),
+            sgst_ledger=self._sgst_ledger.get(),
+            igst_ledger=self._igst_ledger.get(),
+            round_off_ledger=self._round_off_ledger.get(),
+        )
         if not valid:
             messagebox.showwarning(
                 "Export", "No valid entries to export.\nCheck validation messages."

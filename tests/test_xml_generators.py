@@ -111,7 +111,9 @@ def test_sales_xml_structure():
 
     voucher = root.find(".//VOUCHER")
     assert voucher.get("VCHTYPE") == "Sales"
-    assert voucher.get("OBJVIEW") == "Accounting Voucher View"
+    assert voucher.get("OBJVIEW") == "Invoice Voucher View"
+    assert root.find(".//ISINVOICE").text == "Yes"
+    assert root.find(".//PERSISTEDVIEW").text == "Invoice Voucher View"
     assert root.find(".//EFFECTIVEDATE").text == "20240401"
     assert root.find(".//PARTYLEDGERNAME").text == "ABC Corp"
 
@@ -159,7 +161,9 @@ def test_purchase_xml_structure():
 
     voucher = root.find(".//VOUCHER")
     assert voucher.get("VCHTYPE") == "Purchase"
-    assert voucher.get("OBJVIEW") == "Accounting Voucher View"
+    assert voucher.get("OBJVIEW") == "Invoice Voucher View"
+    assert root.find(".//ISINVOICE").text == "Yes"
+    assert root.find(".//PERSISTEDVIEW").text == "Invoice Voucher View"
     assert root.find(".//EFFECTIVEDATE").text == "20240405"
 
     entries = root.findall(".//ALLLEDGERENTRIES.LIST")
@@ -168,8 +172,8 @@ def test_purchase_xml_structure():
 
     ledger_names = [e.find("LEDGERNAME").text for e in entries]
     assert "Purchase @18%" in ledger_names
-    assert "CGST Input" in ledger_names
-    assert "SGST Input" in ledger_names
+    assert "Input CGST" in ledger_names
+    assert "Input SGST" in ledger_names
     assert "Supplier A" in ledger_names
 
     # Supplier Cr

@@ -64,10 +64,12 @@ def build_sales_xml(entries: list[SalesEntry]) -> str:
         voucher.set("REMOTEID", str(uuid.uuid4()))
         voucher.set("VCHTYPE", entry.voucher_type)
         voucher.set("ACTION", "Create")
-        voucher.set("OBJVIEW", "Accounting Voucher View")
+        voucher.set("OBJVIEW", "Invoice Voucher View")
 
         _sub(voucher, "DATE", entry.entry_date)
         _sub(voucher, "EFFECTIVEDATE", entry.entry_date)
+        _sub(voucher, "ISINVOICE", "Yes")
+        _sub(voucher, "PERSISTEDVIEW", "Invoice Voucher View")
         _sub(voucher, "REFERENCEDATE", entry.original_date)
         _sub(voucher, "REFERENCE", entry.invoice_number)
         _sub(voucher, "NARRATION", entry.narration)
@@ -88,6 +90,8 @@ def build_sales_xml(entries: list[SalesEntry]) -> str:
         _sub(sales_entry, "LEDGERNAME", entry.sales_ledger)
         _sub(sales_entry, "ISDEEMEDPOSITIVE", "No")
         _sub(sales_entry, "AMOUNT", str(round(entry.taxable_amount, 2)))
+        if entry.description:
+            _sub(sales_entry, "DESCRIPTION", entry.description)
 
         # GST entries
         if entry.cgst:
@@ -118,6 +122,9 @@ def build_sales_xml(entries: list[SalesEntry]) -> str:
         if entry.gst_number:
             buyer = _sub(voucher, "BASICBUYERADDRESS.LIST")
             _sub(buyer, "BASICBUYERADDRESS", entry.gst_number)
+
+        if entry.place_of_supply:
+            _sub(voucher, "PLACEOFSUPPLY", entry.place_of_supply)
 
     _indent(envelope)
     return ET.tostring(envelope, encoding="unicode", xml_declaration=False)

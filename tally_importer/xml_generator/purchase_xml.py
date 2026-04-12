@@ -119,7 +119,7 @@ def build_purchase_xml(entries: list[PurchaseEntry]) -> str:
             _sub(ro_entry, "LEDGERNAME", entry.round_off_ledger or "Round Off")
             is_debit = entry.round_off > 0
             _sub(ro_entry, "ISDEEMEDPOSITIVE", "Yes" if is_debit else "No")
-            _sub(ro_entry, "AMOUNT", str(round(entry.round_off, 2)))
+            _sub(ro_entry, "AMOUNT", str(-round(entry.round_off, 2)))
 
         if entry.gst_number:
             buyer = _sub(voucher, "BASICBUYERADDRESS.LIST")

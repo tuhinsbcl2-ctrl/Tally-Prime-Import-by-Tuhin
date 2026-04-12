@@ -182,3 +182,71 @@ def test_purchase_xml_structure():
     assert entries[0].find("ISPARTYLEDGER").text == "Yes"
     assert entries[0].find("ISDEEMEDPOSITIVE").text == "No"
     assert float(entries[0].find("AMOUNT").text) == 17700.0
+
+
+def test_purchase_xml_round_off_debit():
+    """Round Off Dr: round_off > 0 → ISDEEMEDPOSITIVE=Yes, AMOUNT negative."""
+    entry = PurchaseEntry(
+        party_name="Supplier B", invoice_number="SUP-002",
+        entry_date="20240405", original_date="20240405",
+        purchase_ledger="Purchase @18%", taxable_amount=15000.0,
+        cgst=1350.0, sgst=1350.0, igst=0.0, total_amount=17700.44,
+        round_off=0.44,
+    )
+    xml_str = build_purchase_xml([entry])
+    root = ET.fromstring(xml_str)
+    entries = root.findall(".//LEDGERENTRIES.LIST")
+    ro_entry = next(e for e in entries if e.find("LEDGERNAME").text == "Round Off")
+    assert ro_entry.find("ISDEEMEDPOSITIVE").text == "Yes"
+    assert float(ro_entry.find("AMOUNT").text) == -0.44
+
+
+def test_purchase_xml_round_off_credit():
+    """Round Off Cr: round_off < 0 → ISDEEMEDPOSITIVE=No, AMOUNT positive."""
+    entry = PurchaseEntry(
+        party_name="Supplier C", invoice_number="SUP-003",
+        entry_date="20240405", original_date="20240405",
+        purchase_ledger="Purchase @18%", taxable_amount=15000.0,
+        cgst=1350.0, sgst=1350.0, igst=0.0, total_amount=17699.16,
+        round_off=-0.84,
+    )
+    xml_str = build_purchase_xml([entry])
+    root = ET.fromstring(xml_str)
+    entries = root.findall(".//LEDGERENTRIES.LIST")
+    ro_entry = next(e for e in entries if e.find("LEDGERNAME").text == "Round Off")
+    assert ro_entry.find("ISDEEMEDPOSITIVE").text == "No"
+    assert float(ro_entry.find("AMOUNT").text) == 0.84
+
+
+def test_sales_xml_round_off_credit():
+    """Sales Round Off Cr: round_off > 0 → ISDEEMEDPOSITIVE=No, AMOUNT positive."""
+    entry = SalesEntry(
+        party_name="Customer A", invoice_number="INV-101",
+        entry_date="20240401", original_date="20240401",
+        sales_ledger="Sales @18%", taxable_amount=10000.0,
+        cgst=900.0, sgst=900.0, igst=0.0, total_amount=11800.44,
+        round_off=0.44,
+    )
+    xml_str = build_sales_xml([entry])
+    root = ET.fromstring(xml_str)
+    entries = root.findall(".//LEDGERENTRIES.LIST")
+    ro_entry = next(e for e in entries if e.find("LEDGERNAME").text == "Round Off")
+    assert ro_entry.find("ISDEEMEDPOSITIVE").text == "No"
+    assert float(ro_entry.find("AMOUNT").text) == 0.44
+
+
+def test_sales_xml_round_off_debit():
+    """Sales Round Off Dr: round_off < 0 → ISDEEMEDPOSITIVE=Yes, AMOUNT negative."""
+    entry = SalesEntry(
+        party_name="Customer B", invoice_number="INV-102",
+        entry_date="20240401", original_date="20240401",
+        sales_ledger="Sales @18%", taxable_amount=10000.0,
+        cgst=900.0, sgst=900.0, igst=0.0, total_amount=11799.16,
+        round_off=-0.84,
+    )
+    xml_str = build_sales_xml([entry])
+    root = ET.fromstring(xml_str)
+    entries = root.findall(".//LEDGERENTRIES.LIST")
+    ro_entry = next(e for e in entries if e.find("LEDGERNAME").text == "Round Off")
+    assert ro_entry.find("ISDEEMEDPOSITIVE").text == "Yes"
+    assert float(ro_entry.find("AMOUNT").text) == -0.84

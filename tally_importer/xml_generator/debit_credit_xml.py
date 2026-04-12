@@ -61,7 +61,7 @@ def build_debit_credit_note_xml(entries: list[DebitCreditNoteEntry]) -> str:
     req_data = _sub(importdata, "REQUESTDATA")
 
     for entry in entries:
-        is_debit_note = entry.voucher_type.strip().lower() != "credit note"
+        is_debit_note = entry.voucher_type.strip().lower() == "debit note"
 
         msg = _sub(req_data, "TALLYMESSAGE")
         msg.set("xmlns:UDF", "TallyUDF")

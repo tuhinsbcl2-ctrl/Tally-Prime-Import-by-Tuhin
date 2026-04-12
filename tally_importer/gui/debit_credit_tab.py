@@ -60,6 +60,7 @@ class DebitCreditTab(ttk.Frame):
             width=14,
         )
         vtype_combo.grid(row=2, column=1, sticky="w", padx=4)
+        vtype_combo.bind("<<ComboboxSelected>>", self._on_vtype_change)
 
         # GST ledger name settings
         ttk.Label(top, text="CGST Ledger Name:").grid(row=3, column=0, sticky="w", pady=3)
@@ -130,6 +131,19 @@ class DebitCreditTab(ttk.Frame):
         return tree
 
     # ------------------------------------------------------------------
+    def _on_vtype_change(self, _event: Any = None) -> None:
+        """Update default GST ledger names to match the selected voucher type."""
+        if self._default_vtype.get() == "Credit Note":
+            prefix = "Output"
+        else:
+            prefix = "Input"
+        if self._cgst_ledger.get() in ("Input CGST", "Output CGST"):
+            self._cgst_ledger.set(f"{prefix} CGST")
+        if self._sgst_ledger.get() in ("Input SGST", "Output SGST"):
+            self._sgst_ledger.set(f"{prefix} SGST")
+        if self._igst_ledger.get() in ("Input IGST", "Output IGST"):
+            self._igst_ledger.set(f"{prefix} IGST")
+
     def _browse(self) -> None:
         path = filedialog.askopenfilename(
             title="Select Excel File",

@@ -70,6 +70,7 @@ def build_sales_xml(entries: list[SalesEntry]) -> str:
         _sub(voucher, "EFFECTIVEDATE", entry.entry_date)
         _sub(voucher, "ISINVOICE", "Yes")
         _sub(voucher, "PERSISTEDVIEW", "Invoice Voucher View")
+        _sub(voucher, "VCHENTRYMODE", "Accounting Invoice")
         _sub(voucher, "REFERENCEDATE", entry.original_date)
         _sub(voucher, "REFERENCE", entry.invoice_number)
         _sub(voucher, "NARRATION", entry.narration)

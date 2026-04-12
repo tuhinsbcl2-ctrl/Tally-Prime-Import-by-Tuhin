@@ -290,6 +290,109 @@ def validate_purchase(
 
 
 # ---------------------------------------------------------------------------
+# Debit / Credit Note validation
+# ---------------------------------------------------------------------------
+
+def validate_debit_credit_note(
+    rows: list[dict[str, Any]],
+    mapping: dict[str, str],
+    default_voucher_type: str = "Debit Note",
+    cgst_ledger: str = "",
+    sgst_ledger: str = "",
+    igst_ledger: str = "",
+    round_off_ledger: str = "",
+) -> tuple[list[Any], list[dict[str, Any]]]:
+    from tally_importer.models import DebitCreditNoteEntry
+
+    valid: list[DebitCreditNoteEntry] = []
+    errors: list[dict[str, Any]] = []
+
+    def get(row: dict, key: str) -> str:
+        col = mapping.get(key, "")
+        return str(row.get(col, "")).strip()
+
+    def fget(row: dict, key: str) -> float:
+        val = get(row, key)
+        if val in ("-", ""):
+            return 0.0
+        return _safe_float(val) or 0.0
+
+    for i, row in enumerate(rows):
+        errs: list[str] = []
+
+        party_name = get(row, "party_name")
+        if not party_name:
+            errs.append("Missing party name")
+
+        invoice_number = get(row, "invoice_number")
+        if not invoice_number:
+            errs.append("Missing invoice/note number")
+
+        entry_date = get(row, "entry_date")
+        if not entry_date:
+            errs.append("Missing entry date")
+
+        original_date = get(row, "original_date") or entry_date
+
+        note_ledger = get(row, "note_ledger")
+        if not note_ledger:
+            errs.append("Missing note ledger")
+
+        taxable_str = get(row, "taxable_amount")
+        taxable = _safe_float(taxable_str)
+        if taxable is None:
+            errs.append(f"Invalid taxable amount '{taxable_str}'")
+            taxable = 0.0
+
+        cgst = fget(row, "cgst")
+        sgst = fget(row, "sgst")
+        igst = fget(row, "igst")
+        round_off = fget(row, "round_off")
+        gst_rate = fget(row, "gst_rate")
+        total_amount = fget(row, "total_amount")
+
+        computed_total = round(taxable + cgst + sgst + igst + round_off, 2)
+        if total_amount and abs(computed_total - total_amount) > 1.0:
+            errs.append(
+                f"Tax total mismatch: taxable({taxable}) + taxes({cgst+sgst+igst}) "
+                f"+ round_off({round_off}) = {computed_total} ≠ total({total_amount})"
+            )
+
+        if errs:
+            errors.append({"row": i + 2, "errors": errs, "data": row})
+        else:
+            voucher_type = get(row, "voucher_type") or default_voucher_type
+            valid.append(
+                DebitCreditNoteEntry(
+                    party_name=party_name,
+                    invoice_number=invoice_number,
+                    entry_date=_normalize_date(entry_date),
+                    original_date=_normalize_date(original_date),
+                    note_ledger=note_ledger,
+                    taxable_amount=float(taxable),
+                    cgst=cgst,
+                    sgst=sgst,
+                    igst=igst,
+                    gst_rate=gst_rate,
+                    round_off=round_off,
+                    total_amount=total_amount or computed_total,
+                    gst_number=get(row, "gst_number"),
+                    narration=get(row, "narration"),
+                    voucher_type=voucher_type,
+                    hsn_code=get(row, "hsn_code"),
+                    cgst_ledger=cgst_ledger,
+                    sgst_ledger=sgst_ledger,
+                    igst_ledger=igst_ledger,
+                    round_off_ledger=round_off_ledger,
+                    description=get(row, "description"),
+                    place_of_supply=get(row, "place_of_supply"),
+                )
+            )
+
+    return valid, errors
+
+
+# ---------------------------------------------------------------------------
 # Date normalisation helper
 # ---------------------------------------------------------------------------
 

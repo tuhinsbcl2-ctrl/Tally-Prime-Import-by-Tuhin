@@ -5,30 +5,7 @@ import uuid
 import xml.etree.ElementTree as ET
 
 from tally_importer.models import PurchaseEntry
-
-
-def _sub(parent: ET.Element, tag: str, text: str = "") -> ET.Element:
-    el = ET.SubElement(parent, tag)
-    el.text = text
-    return el
-
-
-def _indent(elem: ET.Element, level: int = 0) -> None:
-    indent = "\n" + "  " * level
-    if len(elem):
-        if not elem.text or not elem.text.strip():
-            elem.text = indent + "  "
-        if not elem.tail or not elem.tail.strip():
-            elem.tail = indent
-        for child in elem:
-            _indent(child, level + 1)
-        if not child.tail or not child.tail.strip():  # type: ignore[union-attr]
-            child.tail = indent  # type: ignore[union-attr]
-    else:
-        if level and (not elem.tail or not elem.tail.strip()):
-            elem.tail = indent
-    if not level:
-        elem.tail = "\n"
+from tally_importer.xml_generator._helpers import _indent, _sub
 
 
 def build_purchase_xml(entries: list[PurchaseEntry]) -> str:

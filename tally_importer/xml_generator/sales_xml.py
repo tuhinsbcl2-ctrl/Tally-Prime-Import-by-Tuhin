@@ -80,14 +80,15 @@ def build_sales_xml(entries: list[SalesEntry]) -> str:
 
         total = round(entry.total_amount, 2)
 
-        # Party Dr (debit)
-        party_entry = _sub(voucher, "ALLLEDGERENTRIES.LIST")
+        # Party Dr (debit, party ledger must be first in Accounting Invoice mode)
+        party_entry = _sub(voucher, "LEDGERENTRIES.LIST")
         _sub(party_entry, "LEDGERNAME", entry.party_name)
+        _sub(party_entry, "ISPARTYLEDGER", "Yes")
         _sub(party_entry, "ISDEEMEDPOSITIVE", "Yes")
         _sub(party_entry, "AMOUNT", str(-total))
 
         # Sales Cr
-        sales_entry = _sub(voucher, "ALLLEDGERENTRIES.LIST")
+        sales_entry = _sub(voucher, "LEDGERENTRIES.LIST")
         _sub(sales_entry, "LEDGERNAME", entry.sales_ledger)
         _sub(sales_entry, "ISDEEMEDPOSITIVE", "No")
         _sub(sales_entry, "AMOUNT", str(round(entry.taxable_amount, 2)))
@@ -96,25 +97,25 @@ def build_sales_xml(entries: list[SalesEntry]) -> str:
 
         # GST entries
         if entry.cgst:
-            cgst_entry = _sub(voucher, "ALLLEDGERENTRIES.LIST")
+            cgst_entry = _sub(voucher, "LEDGERENTRIES.LIST")
             _sub(cgst_entry, "LEDGERNAME", entry.cgst_ledger or "Output CGST")
             _sub(cgst_entry, "ISDEEMEDPOSITIVE", "No")
             _sub(cgst_entry, "AMOUNT", str(round(entry.cgst, 2)))
 
         if entry.sgst:
-            sgst_entry = _sub(voucher, "ALLLEDGERENTRIES.LIST")
+            sgst_entry = _sub(voucher, "LEDGERENTRIES.LIST")
             _sub(sgst_entry, "LEDGERNAME", entry.sgst_ledger or "Output SGST")
             _sub(sgst_entry, "ISDEEMEDPOSITIVE", "No")
             _sub(sgst_entry, "AMOUNT", str(round(entry.sgst, 2)))
 
         if entry.igst:
-            igst_entry = _sub(voucher, "ALLLEDGERENTRIES.LIST")
+            igst_entry = _sub(voucher, "LEDGERENTRIES.LIST")
             _sub(igst_entry, "LEDGERNAME", entry.igst_ledger or "Output IGST")
             _sub(igst_entry, "ISDEEMEDPOSITIVE", "No")
             _sub(igst_entry, "AMOUNT", str(round(entry.igst, 2)))
 
         if entry.round_off:
-            ro_entry = _sub(voucher, "ALLLEDGERENTRIES.LIST")
+            ro_entry = _sub(voucher, "LEDGERENTRIES.LIST")
             _sub(ro_entry, "LEDGERNAME", entry.round_off_ledger or "Round Off")
             is_debit = entry.round_off < 0
             _sub(ro_entry, "ISDEEMEDPOSITIVE", "Yes" if is_debit else "No")

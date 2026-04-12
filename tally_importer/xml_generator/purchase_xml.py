@@ -80,8 +80,15 @@ def build_purchase_xml(entries: list[PurchaseEntry]) -> str:
 
         total = round(entry.total_amount, 2)
 
+        # Supplier Cr (party ledger must be first in Accounting Invoice mode)
+        party_entry = _sub(voucher, "LEDGERENTRIES.LIST")
+        _sub(party_entry, "LEDGERNAME", entry.party_name)
+        _sub(party_entry, "ISPARTYLEDGER", "Yes")
+        _sub(party_entry, "ISDEEMEDPOSITIVE", "No")
+        _sub(party_entry, "AMOUNT", str(total))
+
         # Purchase Dr
-        pur_entry = _sub(voucher, "ALLLEDGERENTRIES.LIST")
+        pur_entry = _sub(voucher, "LEDGERENTRIES.LIST")
         _sub(pur_entry, "LEDGERNAME", entry.purchase_ledger)
         _sub(pur_entry, "ISDEEMEDPOSITIVE", "Yes")
         _sub(pur_entry, "AMOUNT", str(-round(entry.taxable_amount, 2)))
@@ -90,35 +97,29 @@ def build_purchase_xml(entries: list[PurchaseEntry]) -> str:
 
         # GST input tax Dr
         if entry.cgst:
-            cgst_entry = _sub(voucher, "ALLLEDGERENTRIES.LIST")
+            cgst_entry = _sub(voucher, "LEDGERENTRIES.LIST")
             _sub(cgst_entry, "LEDGERNAME", entry.cgst_ledger or "Input CGST")
             _sub(cgst_entry, "ISDEEMEDPOSITIVE", "Yes")
             _sub(cgst_entry, "AMOUNT", str(-round(entry.cgst, 2)))
 
         if entry.sgst:
-            sgst_entry = _sub(voucher, "ALLLEDGERENTRIES.LIST")
+            sgst_entry = _sub(voucher, "LEDGERENTRIES.LIST")
             _sub(sgst_entry, "LEDGERNAME", entry.sgst_ledger or "Input SGST")
             _sub(sgst_entry, "ISDEEMEDPOSITIVE", "Yes")
             _sub(sgst_entry, "AMOUNT", str(-round(entry.sgst, 2)))
 
         if entry.igst:
-            igst_entry = _sub(voucher, "ALLLEDGERENTRIES.LIST")
+            igst_entry = _sub(voucher, "LEDGERENTRIES.LIST")
             _sub(igst_entry, "LEDGERNAME", entry.igst_ledger or "Input IGST")
             _sub(igst_entry, "ISDEEMEDPOSITIVE", "Yes")
             _sub(igst_entry, "AMOUNT", str(-round(entry.igst, 2)))
 
         if entry.round_off:
-            ro_entry = _sub(voucher, "ALLLEDGERENTRIES.LIST")
+            ro_entry = _sub(voucher, "LEDGERENTRIES.LIST")
             _sub(ro_entry, "LEDGERNAME", entry.round_off_ledger or "Round Off")
             is_debit = entry.round_off > 0
             _sub(ro_entry, "ISDEEMEDPOSITIVE", "Yes" if is_debit else "No")
             _sub(ro_entry, "AMOUNT", str(round(entry.round_off, 2)))
-
-        # Supplier Cr
-        party_entry = _sub(voucher, "ALLLEDGERENTRIES.LIST")
-        _sub(party_entry, "LEDGERNAME", entry.party_name)
-        _sub(party_entry, "ISDEEMEDPOSITIVE", "No")
-        _sub(party_entry, "AMOUNT", str(total))
 
         if entry.gst_number:
             buyer = _sub(voucher, "BASICBUYERADDRESS.LIST")

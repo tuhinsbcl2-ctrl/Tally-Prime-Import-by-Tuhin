@@ -117,12 +117,13 @@ def test_sales_xml_structure():
     assert root.find(".//EFFECTIVEDATE").text == "20240401"
     assert root.find(".//PARTYLEDGERNAME").text == "ABC Corp"
 
-    entries = root.findall(".//ALLLEDGERENTRIES.LIST")
+    entries = root.findall(".//LEDGERENTRIES.LIST")
     # Party Dr, Sales Cr, CGST Cr, SGST Cr
     assert len(entries) == 4
 
-    # Party Dr
+    # Party Dr (must be first, with ISPARTYLEDGER)
     assert entries[0].find("LEDGERNAME").text == "ABC Corp"
+    assert entries[0].find("ISPARTYLEDGER").text == "Yes"
     assert entries[0].find("ISDEEMEDPOSITIVE").text == "Yes"
     assert float(entries[0].find("AMOUNT").text) == -11800.0
 
@@ -140,7 +141,7 @@ def test_sales_xml_igst():
     )
     xml_str = build_sales_xml([entry])
     root = ET.fromstring(xml_str)
-    entries = root.findall(".//ALLLEDGERENTRIES.LIST")
+    entries = root.findall(".//LEDGERENTRIES.LIST")
     ledger_names = [e.find("LEDGERNAME").text for e in entries]
     assert "Output IGST" in ledger_names
     assert "Output CGST" not in ledger_names
@@ -166,8 +167,8 @@ def test_purchase_xml_structure():
     assert root.find(".//PERSISTEDVIEW").text == "Invoice Voucher View"
     assert root.find(".//EFFECTIVEDATE").text == "20240405"
 
-    entries = root.findall(".//ALLLEDGERENTRIES.LIST")
-    # Purchase Dr, CGST Dr, SGST Dr, Supplier Cr
+    entries = root.findall(".//LEDGERENTRIES.LIST")
+    # Supplier Cr (first), Purchase Dr, CGST Dr, SGST Dr
     assert len(entries) == 4
 
     ledger_names = [e.find("LEDGERNAME").text for e in entries]
@@ -176,7 +177,8 @@ def test_purchase_xml_structure():
     assert "Input SGST" in ledger_names
     assert "Supplier A" in ledger_names
 
-    # Supplier Cr
-    supplier_entry = next(e for e in entries if e.find("LEDGERNAME").text == "Supplier A")
-    assert supplier_entry.find("ISDEEMEDPOSITIVE").text == "No"
-    assert float(supplier_entry.find("AMOUNT").text) == 17700.0
+    # Supplier Cr must be first with ISPARTYLEDGER=Yes
+    assert entries[0].find("LEDGERNAME").text == "Supplier A"
+    assert entries[0].find("ISPARTYLEDGER").text == "Yes"
+    assert entries[0].find("ISDEEMEDPOSITIVE").text == "No"
+    assert float(entries[0].find("AMOUNT").text) == 17700.0

@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from tally_importer.gui.bank_tab import BankTab
+from tally_importer.gui.debit_credit_tab import DebitCreditTab
 from tally_importer.gui.sales_tab import SalesTab
 from tally_importer.gui.purchase_tab import PurchaseTab
 
@@ -59,6 +60,9 @@ class App(tk.Tk):
         purchase_tab = PurchaseTab(notebook)
         notebook.add(purchase_tab, text="  Purchase  ")
 
+        debit_credit_tab = DebitCreditTab(notebook)
+        notebook.add(debit_credit_tab, text="  Debit/Credit Notes  ")
+
     def _show_about(self) -> None:
         from tkinter import messagebox
 
@@ -70,6 +74,7 @@ class App(tk.Tk):
             "Supports:\n"
             "  • Bank Vouchers (Receipt / Payment / Contra)\n"
             "  • Sales Vouchers\n"
-            "  • Purchase Vouchers\n\n"
+            "  • Purchase Vouchers\n"
+            "  • Debit Note / Credit Note Vouchers\n\n"
             "Built with Python + tkinter.",
         )

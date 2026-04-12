@@ -89,6 +89,27 @@ SALES_FIELDS: list[tuple[str, str, bool]] = [
     ("voucher_type",   "Voucher Type",       True),
 ]
 
+DEBIT_CREDIT_NOTE_FIELDS: list[tuple[str, str, bool]] = [
+    ("party_name",       "Party Name",              True),
+    ("invoice_number",   "Invoice / Note Number",   True),
+    ("entry_date",       "Entry Date",              True),
+    ("original_date",    "Original Date",           False),
+    ("note_ledger",      "Note Ledger (Return)",    True),
+    ("taxable_amount",   "Taxable Amount",          True),
+    ("gst_rate",         "GST Rate",                False),
+    ("hsn_code",         "HSN/SAC Code",            False),
+    ("cgst",             "CGST Amount",             False),
+    ("sgst",             "SGST Amount",             False),
+    ("igst",             "IGST Amount",             False),
+    ("round_off",        "Round Off",               False),
+    ("total_amount",     "Total Amount",            True),
+    ("gst_number",       "GST Number",              False),
+    ("narration",        "Narration",               False),
+    ("description",      "Description",             False),
+    ("voucher_type",     "Voucher Type",            False),
+    ("place_of_supply",  "Place of Supply (State)", False),
+]
+
 PURCHASE_FIELDS: list[tuple[str, str, bool]] = [
     ("party_name",       "Party Name",              True),
     ("invoice_number",   "Invoice Number",          True),

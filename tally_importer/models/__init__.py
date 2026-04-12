@@ -74,3 +74,31 @@ class PurchaseEntry:
     round_off_ledger: str = ""
     description: str = ""
     place_of_supply: str = ""
+
+
+@dataclass
+class DebitCreditNoteEntry:
+    """Represents a single Debit Note or Credit Note row."""
+
+    party_name: str
+    invoice_number: str
+    entry_date: str             # YYYYMMDD
+    original_date: str          # YYYYMMDD
+    note_ledger: str            # Purchase Return / Sales Return ledger
+    taxable_amount: float
+    cgst: float = 0.0
+    sgst: float = 0.0
+    igst: float = 0.0
+    gst_rate: float = 0.0
+    round_off: float = 0.0
+    total_amount: float = 0.0
+    gst_number: str = ""
+    narration: str = ""
+    voucher_type: str = "Debit Note"   # 'Debit Note' or 'Credit Note'
+    hsn_code: str = ""
+    cgst_ledger: str = ""
+    sgst_ledger: str = ""
+    igst_ledger: str = ""
+    round_off_ledger: str = ""
+    description: str = ""
+    place_of_supply: str = ""

@@ -1,6 +1,7 @@
 """Validation logic for bank, sales and purchase data."""
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from tally_importer.models import BankTransaction, PurchaseEntry, SalesEntry
@@ -424,4 +425,5 @@ def _normalize_date(date_str: str) -> str:
             continue
 
     # Return as-is; validation will flag it if needed
+    logging.warning("_normalize_date: unrecognized date format %r – passing through as-is", date_str)
     return date_str

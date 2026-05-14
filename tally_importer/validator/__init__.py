@@ -4,7 +4,26 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from tally_importer.models import BankTransaction, PurchaseEntry, SalesEntry
+from tally_importer.models import BankTransaction, PurchaseEntry, SalesEntry, SalesItemwise, SalesLineItem
+
+
+# Valid UQC (Unit of Quantity and Cost) codes
+VALID_UQC_CODES = {
+    "Pcs": "Pieces",
+    "Tonn": "Tonnes",
+    "Kgs": "Kilograms",
+    "gm": "Grams",
+    "Mtr": "Meters",
+    "Ltr": "Liters",
+    "Box": "Boxes",
+    "Pack": "Packs",
+    "bags": "Bags",
+    "other": "Other",
+    "set": "Sets",
+    "sq ft": "Square Feet",
+    "pair": "Pairs",
+    "units": "Units",
+}
 
 
 def _safe_float(value: Any) -> float | None:
@@ -186,6 +205,166 @@ def validate_sales(
                 )
             )
 
+    return valid, errors
+
+
+# ---------------------------------------------------------------------------
+# Sales Itemwise validation
+# ---------------------------------------------------------------------------
+
+def validate_sales_itemwise(
+    rows: list[dict[str, Any]],
+    mapping: dict[str, str],
+    default_voucher_type: str = "Sales",
+    cgst_ledger: str = "",
+    sgst_ledger: str = "",
+    igst_ledger: str = "",
+    round_off_ledger: str = "",
+) -> tuple[list[SalesItemwise], list[dict[str, Any]]]:
+    """Validate itemwise sales rows and group by invoice number.
+    
+    Supports multiple items per invoice where header details (Date, Invoice No, 
+    Customer, etc.) repeat for each line item.
+    
+    Returns
+    -------
+    valid : list of SalesItemwise (grouped by invoice)
+    errors : list of dicts with keys ``row``, ``errors``
+    """
+    valid: list[SalesItemwise] = []
+    errors: list[dict[str, Any]] = []
+    invoice_map: dict[str, SalesItemwise] = {}  # Key: (date, invoice_number, party_name)
+
+    def get(row: dict, key: str) -> str:
+        col = mapping.get(key, "")
+        return str(row.get(col, "")).strip()
+
+    def fget(row: dict, key: str) -> float:
+        val = get(row, key)
+        if val in ("-", ""):
+            return 0.0
+        return _safe_float(val) or 0.0
+
+    for i, row in enumerate(rows):
+        errs: list[str] = []
+
+        # Header fields (must be present in every row)
+        party_name = get(row, "party_name")
+        if not party_name:
+            errs.append("Missing party name")
+
+        invoice_number = get(row, "invoice_number")
+        if not invoice_number:
+            errs.append("Missing invoice number")
+
+        entry_date = get(row, "entry_date")
+        if not entry_date:
+            errs.append("Missing entry date")
+
+        sales_ledger = get(row, "sales_ledger")
+        if not sales_ledger:
+            errs.append("Missing sales ledger")
+
+        # Line item fields
+        item_name = get(row, "item_name")
+        if not item_name:
+            errs.append("Missing item name/description")
+
+        hsn_code = get(row, "hsn_code")
+        if not hsn_code:
+            errs.append("Missing HSN/SAC code")
+
+        qty_str = get(row, "qty")
+        qty = _safe_float(qty_str)
+        if qty is None or qty <= 0:
+            errs.append(f"Invalid quantity '{qty_str}' – must be positive")
+            qty = 0.0
+
+        rate_str = get(row, "rate")
+        rate = _safe_float(rate_str)
+        if rate is None or rate <= 0:
+            errs.append(f"Invalid rate '{rate_str}' – must be positive")
+            rate = 0.0
+
+        uqc = get(row, "uqc")
+        if not uqc:
+            errs.append("Missing UQC (Unit of Quantity and Cost)")
+        elif uqc not in VALID_UQC_CODES:
+            errs.append(
+                f"Invalid UQC '{uqc}'. Valid options: {', '.join(VALID_UQC_CODES.keys())}"
+            )
+
+        gst_rate = fget(row, "gst_rate")
+        if not gst_rate:
+            errs.append("Missing GST rate for item")
+
+        cgst = fget(row, "cgst")
+        sgst = fget(row, "sgst")
+        igst = fget(row, "igst")
+        remarks = get(row, "remarks")
+
+        # Calculate line amount
+        line_amount = round(qty * rate, 2) if qty > 0 and rate > 0 else 0.0
+
+        # Validate GST amount consistency
+        computed_gst = round(cgst + sgst + igst, 2)
+        expected_gst = round(line_amount * (gst_rate / 100), 2) if gst_rate > 0 else 0.0
+        
+        if expected_gst > 0 and abs(computed_gst - expected_gst) > 1.0:
+            errs.append(
+                f"GST amount mismatch for item: computed GST ({cgst}+{sgst}+{igst}={computed_gst}) "
+                f"≠ expected ({expected_gst} at {gst_rate}%)"
+            )
+
+        if errs:
+            errors.append({"row": i + 2, "errors": errs, "data": row})
+        else:
+            # Group by invoice key
+            invoice_key = (entry_date, invoice_number, party_name)
+            
+            # Create line item
+            line_item = SalesLineItem(
+                item_name=item_name,
+                hsn_code=hsn_code,
+                qty=float(qty),
+                rate=float(rate),
+                amount=line_amount,
+                gst_rate=gst_rate,
+                cgst=cgst,
+                sgst=sgst,
+                igst=igst,
+                remarks=remarks,
+                unit=uqc,
+            )
+
+            if invoice_key not in invoice_map:
+                # Create new invoice entry
+                original_date = get(row, "original_date") or entry_date
+                voucher_type = get(row, "voucher_type") or default_voucher_type
+                
+                invoice_map[invoice_key] = SalesItemwise(
+                    party_name=party_name,
+                    invoice_number=invoice_number,
+                    entry_date=_normalize_date(entry_date),
+                    original_date=_normalize_date(original_date),
+                    sales_ledger=sales_ledger,
+                    gst_number=get(row, "gst_number"),
+                    narration=get(row, "narration"),
+                    voucher_type=voucher_type,
+                    cgst_ledger=cgst_ledger,
+                    sgst_ledger=sgst_ledger,
+                    igst_ledger=igst_ledger,
+                    round_off_ledger=round_off_ledger,
+                    place_of_supply=get(row, "place_of_supply"),
+                    line_items=[line_item],
+                )
+            else:
+                # Add item to existing invoice
+                invoice_map[invoice_key].line_items.append(line_item)
+
+    # Convert map to list
+    valid = list(invoice_map.values())
+    
     return valid, errors
 
 

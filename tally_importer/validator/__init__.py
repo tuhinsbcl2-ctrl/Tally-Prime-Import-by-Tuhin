@@ -4,7 +4,15 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from tally_importer.models import BankTransaction, PurchaseEntry, SalesEntry, SalesItemwise, SalesLineItem
+from tally_importer.models import (
+    BankTransaction,
+    DebitCreditNoteEntry,
+    JournalEntry,
+    PurchaseEntry,
+    SalesEntry,
+    SalesItemwise,
+    SalesLineItem,
+)
 
 
 # Valid UQC (Unit of Quantity and Cost) codes
@@ -202,6 +210,11 @@ def validate_sales(
                     round_off_ledger=round_off_ledger,
                     description=get(row, "description"),
                     place_of_supply=get(row, "place_of_supply"),
+                    billing_address=get(row, "billing_address"),
+                    shipping_address=get(row, "shipping_address"),
+                    billing_state=get(row, "billing_state"),
+                    shipping_state=get(row, "shipping_state"),
+                    billing_country=get(row, "billing_country"),
                 )
             )
 
@@ -356,6 +369,11 @@ def validate_sales_itemwise(
                     igst_ledger=igst_ledger,
                     round_off_ledger=round_off_ledger,
                     place_of_supply=get(row, "place_of_supply"),
+                    billing_address=get(row, "billing_address"),
+                    shipping_address=get(row, "shipping_address"),
+                    billing_state=get(row, "billing_state"),
+                    shipping_state=get(row, "shipping_state"),
+                    billing_country=get(row, "billing_country"),
                     line_items=[line_item],
                 )
             else:
@@ -481,9 +499,7 @@ def validate_debit_credit_note(
     sgst_ledger: str = "",
     igst_ledger: str = "",
     round_off_ledger: str = "",
-) -> tuple[list[Any], list[dict[str, Any]]]:
-    from tally_importer.models import DebitCreditNoteEntry
-
+) -> tuple[list[DebitCreditNoteEntry], list[dict[str, Any]]]:
     valid: list[DebitCreditNoteEntry] = []
     errors: list[dict[str, Any]] = []
 
@@ -566,6 +582,86 @@ def validate_debit_credit_note(
                     round_off_ledger=round_off_ledger,
                     description=get(row, "description"),
                     place_of_supply=get(row, "place_of_supply"),
+                )
+            )
+
+    return valid, errors
+
+
+# ---------------------------------------------------------------------------
+# Journal Entry validation
+# ---------------------------------------------------------------------------
+
+def validate_journal_entries(
+    rows: list[dict[str, Any]],
+    mapping: dict[str, str],
+) -> tuple[list[JournalEntry], list[dict[str, Any]]]:
+    """Validate journal entry rows.
+    
+    Returns
+    -------
+    valid : list of JournalEntry
+    errors : list of dicts with keys ``row``, ``errors``
+    """
+    valid: list[JournalEntry] = []
+    errors: list[dict[str, Any]] = []
+
+    def get(row: dict, key: str) -> str:
+        col = mapping.get(key, "")
+        return str(row.get(col, "")).strip()
+
+    def fget(row: dict, key: str) -> float:
+        val = get(row, key)
+        if val in ("-", ""):
+            return 0.0
+        return _safe_float(val) or 0.0
+
+    for i, row in enumerate(rows):
+        errs: list[str] = []
+
+        date = get(row, "date")
+        if not date:
+            errs.append("Missing date")
+
+        narration = get(row, "narration")
+        if not narration:
+            errs.append("Missing narration")
+
+        debit_ledger = get(row, "debit_ledger")
+        if not debit_ledger:
+            errs.append("Missing debit ledger")
+
+        debit_amount = fget(row, "debit_amount")
+        if debit_amount <= 0:
+            errs.append(f"Invalid debit amount – must be positive")
+
+        credit_ledger = get(row, "credit_ledger")
+        if not credit_ledger:
+            errs.append("Missing credit ledger")
+
+        credit_amount = fget(row, "credit_amount")
+        if credit_amount <= 0:
+            errs.append(f"Invalid credit amount – must be positive")
+
+        # Check if debit and credit amounts match
+        if debit_amount > 0 and credit_amount > 0 and abs(debit_amount - credit_amount) > 0.01:
+            errs.append(
+                f"Debit amount ({debit_amount}) must equal credit amount ({credit_amount})"
+            )
+
+        if errs:
+            errors.append({"row": i + 2, "errors": errs, "data": row})
+        else:
+            valid.append(
+                JournalEntry(
+                    date=_normalize_date(date),
+                    narration=narration,
+                    debit_ledger=debit_ledger,
+                    debit_amount=debit_amount,
+                    credit_ledger=credit_ledger,
+                    credit_amount=credit_amount,
+                    reference_number=get(row, "reference_number"),
+                    invoice_number=get(row, "invoice_number"),
                 )
             )
 

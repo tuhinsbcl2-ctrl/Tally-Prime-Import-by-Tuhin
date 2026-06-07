@@ -69,24 +69,30 @@ BANK_FIELDS: list[tuple[str, str, bool]] = [
 ]
 
 SALES_FIELDS: list[tuple[str, str, bool]] = [
-    ("party_name",     "Party Name",          True),
-    ("invoice_number", "Invoice Number",      True),
-    ("entry_date",     "Entry Date",          True),
-    ("original_date",  "Original Date",       False),
-    ("sales_ledger",   "Sales Ledger",        True),
-    ("taxable_amount", "Taxable Amount",      True),
-    ("gst_rate",       "GST Rate",           False),
-    ("hsn_code",       "HSN/SAC Code",       False),
-    ("cgst",           "CGST Amount",        False),
-    ("sgst",           "SGST Amount",        False),
-    ("igst",           "IGST Amount",        False),
-    ("round_off",      "Round Off",          False),
-    ("total_amount",   "Total Amount",       True),
-    ("gst_number",     "GST Number",         False),
-    ("narration",      "Narration",          False),
-    ("description",    "Description",        False),
-    ("place_of_supply","Place of Supply (State)", False),
-    ("voucher_type",   "Voucher Type",       True),
+    ("party_name",        "Party Name",              True),
+    ("invoice_number",    "Invoice Number",          True),
+    ("entry_date",        "Entry Date",              True),
+    ("original_date",     "Original Date",           False),
+    ("sales_ledger",      "Sales Ledger",            True),
+    ("taxable_amount",    "Taxable Amount",          True),
+    ("gst_rate",          "GST Rate",                False),
+    ("hsn_code",          "HSN/SAC Code",            False),
+    ("cgst",              "CGST Amount",             False),
+    ("sgst",              "SGST Amount",             False),
+    ("igst",              "IGST Amount",             False),
+    ("round_off",         "Round Off",               False),
+    ("total_amount",      "Total Amount",            True),
+    ("gst_number",        "GST Number",              False),
+    ("narration",         "Narration",               False),
+    ("description",       "Description",             False),
+    ("place_of_supply",   "Place of Supply (State)", False),
+    ("voucher_type",      "Voucher Type",            True),
+    # Shipping and address fields for sales
+    ("billing_address",   "Billing Address",         False),
+    ("shipping_address",  "Shipping Address",        False),
+    ("billing_state",     "Billing State",           False),
+    ("shipping_state",    "Shipping State",          False),
+    ("billing_country",   "Billing Country",         False),
 ]
 
 DEBIT_CREDIT_NOTE_FIELDS: list[tuple[str, str, bool]] = [
@@ -129,4 +135,99 @@ PURCHASE_FIELDS: list[tuple[str, str, bool]] = [
     ("description",      "Description",             False),
     ("voucher_type",     "Voucher Type",            True),
     ("place_of_supply",  "Place of Supply (State)", True),
+]
+
+SALES_ITEMWISE_FIELDS: list[tuple[str, str, bool]] = [
+    # Invoice header
+    ("date",              "Date",                True),
+    ("invoice_number",    "Invoice Number",      True),
+    ("party_name",        "Party Name",          True),
+    ("entry_date",        "Entry Date",          True),
+    ("original_date",     "Original Date",       False),
+    ("sales_ledger",      "Sales Ledger",        True),
+    ("gst_number",        "GST Number",          False),
+    ("place_of_supply",   "Place of Supply",     False),
+    ("narration",         "Narration",           False),
+    ("voucher_type",      "Voucher Type",        True),
+    # Shipping and address fields
+    ("billing_address",   "Billing Address",     False),
+    ("shipping_address",  "Shipping Address",    False),
+    ("billing_state",     "Billing State",       False),
+    ("shipping_state",    "Shipping State",      False),
+    ("billing_country",   "Billing Country",     False),
+    
+    # Line item fields (per row)
+    ("item_name",         "Item Name",           True),
+    ("hsn_code",          "HSN/SAC Code",        True),
+    ("qty",               "Quantity",            True),
+    ("uqc",               "UQC (Unit)",          True),
+    ("rate",              "Rate per Unit",       True),
+    ("gst_rate",          "GST Rate %",          True),
+    ("cgst",              "CGST Amount",         False),
+    ("sgst",              "SGST Amount",         False),
+    ("igst",              "IGST Amount",         False),
+    ("remarks",           "Remarks",             False),
+]
+
+PURCHASE_ITEMWISE_FIELDS: list[tuple[str, str, bool]] = [
+    # Invoice header
+    ("date",              "Date",                True),
+    ("invoice_number",    "Invoice Number",      True),
+    ("party_name",        "Party Name",          True),
+    ("entry_date",        "Entry Date",          True),
+    ("original_date",     "Original Date",       False),
+    ("purchase_ledger",   "Purchase Ledger",     True),
+    ("gst_number",        "GST Number",          False),
+    ("place_of_supply",   "Place of Supply",     False),
+    ("narration",         "Narration",           False),
+    ("voucher_type",      "Voucher Type",        True),
+    
+    # Line item fields (per row)
+    ("item_name",         "Item Name",           True),
+    ("hsn_code",          "HSN/SAC Code",        True),
+    ("qty",               "Quantity",            True),
+    ("uqc",               "UQC (Unit)",          True),
+    ("rate",              "Rate per Unit",       True),
+    ("gst_rate",          "GST Rate %",          True),
+    ("cgst",              "CGST Amount",         False),
+    ("sgst",              "SGST Amount",         False),
+    ("igst",              "IGST Amount",         False),
+    ("remarks",           "Remarks",             False),
+]
+
+DEBIT_CREDIT_NOTE_ITEMWISE_FIELDS: list[tuple[str, str, bool]] = [
+    # Invoice header
+    ("date",              "Date",                True),
+    ("invoice_number",    "Note Number",         True),
+    ("party_name",        "Party Name",          True),
+    ("entry_date",        "Entry Date",          True),
+    ("original_date",     "Original Date",       False),
+    ("note_ledger",       "Note Ledger",         True),
+    ("gst_number",        "GST Number",          False),
+    ("place_of_supply",   "Place of Supply",     False),
+    ("narration",         "Narration",           False),
+    ("voucher_type",      "Voucher Type",        True),
+    
+    # Line item fields (per row)
+    ("item_name",         "Item Name",           True),
+    ("hsn_code",          "HSN/SAC Code",        True),
+    ("qty",               "Quantity",            True),
+    ("uqc",               "UQC (Unit)",          True),
+    ("rate",              "Rate per Unit",       True),
+    ("gst_rate",          "GST Rate %",          True),
+    ("cgst",              "CGST Amount",         False),
+    ("sgst",              "SGST Amount",         False),
+    ("igst",              "IGST Amount",         False),
+    ("remarks",           "Remarks",             False),
+]
+
+JOURNAL_ENTRY_FIELDS: list[tuple[str, str, bool]] = [
+    ("date",              "Date",                True),
+    ("narration",         "Narration",           True),
+    ("debit_ledger",      "Debit Ledger",        True),
+    ("debit_amount",      "Debit Amount",        True),
+    ("credit_ledger",     "Credit Ledger",       True),
+    ("credit_amount",     "Credit Amount",       True),
+    ("reference_number",  "Reference Number",    False),
+    ("invoice_number",    "Invoice Number",      False),
 ]

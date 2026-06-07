@@ -9,6 +9,8 @@ from tally_importer.models import (
     DebitCreditNoteEntry,
     JournalEntry,
     PurchaseEntry,
+    PurchaseItemwise,
+    PurchaseLineItem,
     SalesEntry,
     SalesItemwise,
     SalesLineItem,
@@ -488,6 +490,141 @@ def validate_purchase(
 
 
 # ---------------------------------------------------------------------------
+# Purchase Itemwise validation
+# ---------------------------------------------------------------------------
+
+def validate_purchase_itemwise(
+    rows: list[dict[str, Any]],
+    mapping: dict[str, str],
+    default_voucher_type: str = "Purchase",
+    cgst_ledger: str = "",
+    sgst_ledger: str = "",
+    igst_ledger: str = "",
+    round_off_ledger: str = "",
+) -> tuple[list[PurchaseItemwise], list[dict[str, Any]]]:
+    """Validate itemwise purchase rows and group by invoice number."""
+    valid: list[PurchaseItemwise] = []
+    errors: list[dict[str, Any]] = []
+    invoice_map: dict[str, PurchaseItemwise] = {}
+
+    def get(row: dict, key: str) -> str:
+        col = mapping.get(key, "")
+        return str(row.get(col, "")).strip()
+
+    def fget(row: dict, key: str) -> float:
+        val = get(row, key)
+        if val in ("-", ""):
+            return 0.0
+        return _safe_float(val) or 0.0
+
+    for i, row in enumerate(rows):
+        errs: list[str] = []
+
+        party_name = get(row, "party_name")
+        if not party_name:
+            errs.append("Missing party name")
+
+        invoice_number = get(row, "invoice_number")
+        if not invoice_number:
+            errs.append("Missing invoice number")
+
+        entry_date = get(row, "entry_date")
+        if not entry_date:
+            errs.append("Missing entry date")
+
+        purchase_ledger = get(row, "purchase_ledger")
+        if not purchase_ledger:
+            errs.append("Missing purchase ledger")
+
+        item_name = get(row, "item_name")
+        if not item_name:
+            errs.append("Missing item name")
+
+        hsn_code = get(row, "hsn_code")
+        if not hsn_code:
+            errs.append("Missing HSN/SAC code")
+
+        qty_str = get(row, "qty")
+        qty = _safe_float(qty_str)
+        if qty is None or qty <= 0:
+            errs.append(f"Invalid quantity '{qty_str}'")
+            qty = 0.0
+
+        rate_str = get(row, "rate")
+        rate = _safe_float(rate_str)
+        if rate is None or rate <= 0:
+            errs.append(f"Invalid rate '{rate_str}'")
+            rate = 0.0
+
+        uqc = get(row, "uqc")
+        if not uqc:
+            errs.append("Missing UQC")
+        elif uqc not in VALID_UQC_CODES:
+            errs.append(f"Invalid UQC '{uqc}'")
+
+        gst_rate = fget(row, "gst_rate")
+        if not gst_rate:
+            errs.append("Missing GST rate")
+
+        cgst = fget(row, "cgst")
+        sgst = fget(row, "sgst")
+        igst = fget(row, "igst")
+        remarks = get(row, "remarks")
+
+        line_amount = round(qty * rate, 2) if qty > 0 and rate > 0 else 0.0
+        computed_gst = round(cgst + sgst + igst, 2)
+        expected_gst = round(line_amount * (gst_rate / 100), 2) if gst_rate > 0 else 0.0
+        
+        if expected_gst > 0 and abs(computed_gst - expected_gst) > 1.0:
+            errs.append(f"GST amount mismatch")
+
+        if errs:
+            errors.append({"row": i + 2, "errors": errs, "data": row})
+        else:
+            invoice_key = (entry_date, invoice_number, party_name)
+            
+            line_item = PurchaseLineItem(
+                item_name=item_name,
+                hsn_code=hsn_code,
+                qty=float(qty),
+                rate=float(rate),
+                amount=line_amount,
+                gst_rate=gst_rate,
+                cgst=cgst,
+                sgst=sgst,
+                igst=igst,
+                remarks=remarks,
+                unit=uqc,
+            )
+
+            if invoice_key not in invoice_map:
+                original_date = get(row, "original_date") or entry_date
+                voucher_type = get(row, "voucher_type") or default_voucher_type
+                
+                invoice_map[invoice_key] = PurchaseItemwise(
+                    party_name=party_name,
+                    invoice_number=invoice_number,
+                    entry_date=_normalize_date(entry_date),
+                    original_date=_normalize_date(original_date),
+                    purchase_ledger=purchase_ledger,
+                    gst_number=get(row, "gst_number"),
+                    narration=get(row, "narration"),
+                    voucher_type=voucher_type,
+                    cgst_ledger=cgst_ledger,
+                    sgst_ledger=sgst_ledger,
+                    igst_ledger=igst_ledger,
+                    round_off_ledger=round_off_ledger,
+                    place_of_supply=get(row, "place_of_supply"),
+                    line_items=[line_item],
+                )
+            else:
+                invoice_map[invoice_key].line_items.append(line_item)
+
+    valid = list(invoice_map.values())
+    return valid, errors
+
+
+# ---------------------------------------------------------------------------
 # Debit / Credit Note validation
 # ---------------------------------------------------------------------------
 
@@ -549,10 +686,7 @@ def validate_debit_credit_note(
 
         computed_total = round(taxable + cgst + sgst + igst + round_off, 2)
         if total_amount and abs(computed_total - total_amount) > 1.0:
-            errs.append(
-                f"Tax total mismatch: taxable({taxable}) + taxes({cgst+sgst+igst}) "
-                f"+ round_off({round_off}) = {computed_total} ≠ total({total_amount})"
-            )
+            errs.append(f"Tax total mismatch")
 
         if errs:
             errors.append({"row": i + 2, "errors": errs, "data": row})
